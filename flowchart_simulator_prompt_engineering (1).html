@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-black text-white selection:bg-orange-500 selection:text-black">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Engineering Simulator & Flowchart Praktikum</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Custom scrollbar styled for glass theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 9999px;
+            border: 2px solid rgba(0, 0, 0, 0.4);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(249, 115, 22, 0.6);
+        }
+
+        /* Glassmorphism utility classes */
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 180, 50, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-panel-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-panel-hover:hover {
+            background: rgba(28, 25, 23, 0.75);
+            border-color: rgba(249, 115, 22, 0.4);
+            box-shadow: 0 0 25px -5px rgba(249, 115, 22, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .glass-button {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Flowchart line styling */
+        .flow-line {
+            position: relative;
+        }
+        .flow-line::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -24px;
+            width: 2px;
+            height: 24px;
+            background: linear-gradient(180deg, rgba(249, 115, 22, 0.6) 0%, rgba(250, 204, 21, 0.2) 100%);
+            transform: translateX(-50%);
+        }
+        .flow-line-last::after {
+            display: none;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-black text-neutral-100 overflow-x-hidden relative min-h-screen">
+
+    <!-- Ambient Glass Background Lights (Orbs) -->
+    <div class="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-orange-600/20 rounded-full blur-[140px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-amber-500/15 rounded-full blur-[160px] pointer-events-none z-0"></div>
+    <div class="fixed top-[40%] right-[20%] w-[350px] h-[350px] bg-yellow-500/10 rounded-full blur-[130px] pointer-events-none z-0"></div>
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 backdrop-blur-xl bg-black/70 border-b border-orange-500/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Logo Brand -->
+            <div class="flex items-center space-x-3.5">
+                <div class="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 text-black rounded-xl shadow-[0_0_15px_rgba(249,115,22,0.4)] flex items-center justify-center font-bold">
+                    <i data-lucide="cpu" class="w-6 h-6 stroke-[2.5]"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        PromptLab <span class="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">Interactive</span>
+                    </h1>
+                    <p class="text-xs text-amber-200/70 font-medium">Flowchart & Simulator Praktikum Prompt Engineering</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <nav class="flex space-x-1.5 glass-panel p-1.5 rounded-2xl border border-white/10 text-xs sm:text-sm font-semibold">
+                <button onclick="switchTab('flowchart')" id="tab-flowchart" class="tab-btn active px-4 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-bold shadow-lg shadow-orange-500/20">
+                    <i data-lucide="git-fork" class="w-4 h-4"></i>
+                    <span>Flowchart Alur</span>
+                </button>
+                <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn px-4 py-2.5 rounded-xl transition-all duration-300 text-neutral-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+                    <i data-lucide="terminal" class="w-4 h-4"></i>
+                    <span>Simulator Prompt</span>
+                </button>
+                <button onclick="switchTab('guide')" id="tab-guide" class="tab-btn px-4 py-2.5 rounded-xl transition-all duration-300 text-neutral-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span>Materi 4 Teknik</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+
+        <!-- ================= SECTION 1: FLOWCHART ================= -->
+        <section id="sec-flowchart" class="space-y-8">
+            <div class="glass-panel rounded-3xl p-6 sm:p-10 relative overflow-hidden">
+                <!-- Decorative background glow inside panel -->
+                <div class="absolute top-0 right-0 w-80 h-80 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="max-w-3xl mx-auto text-center mb-12">
+                    <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/30 mb-4 shadow-[0_0_10px_rgba(249,115,22,0.15)]">
+                        <i data-lucide="workflow" class="w-4 h-4"></i> Workflow Alur Praktikum
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Flowchart Alur Pembelajaran & Simulator</h2>
+                    <p class="text-neutral-400 mt-3 text-sm sm:text-base leading-relaxed">Visualisasi langkah kerja praktikum Prompt Engineering dari pemahaman teori hingga pelaporan tugas.</p>
+                </div>
+
+                <!-- Vertical Interactive Flowchart -->
+                <div class="max-w-xl mx-auto space-y-6 relative py-4">
+
+                    <!-- Step 1: Start -->
+                    <div class="flow-line flex flex-col items-center">
+                        <div class="w-full glass-panel glass-panel-hover rounded-2xl p-5 flex items-center gap-4 group">
+                            <div class="w-12 h-12 rounded-xl bg-orange-500/15 border border-orange-500/40 text-orange-400 flex items-center justify-center font-extrabold text-lg shrink-0 shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                                01
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-[11px] font-bold text-orange-400 uppercase tracking-widest">Mulai Praktikum</span>
+                                <h3 class="font-bold text-white group-hover:text-yellow-400 transition-colors text-base">Akses Platform & Buka Modul</h3>
+                                <p class="text-xs text-neutral-400 mt-0.5">Pengguna membuka platform dan menyiapkan catatan praktikum.</p>
+                            </div>
+                            <button onclick="switchTab('guide')" class="px-3.5 py-2 text-xs bg-white/5 hover:bg-orange-500 hover:text-black text-amber-200 border border-white/10 rounded-xl transition-all font-semibold flex items-center gap-1.5 shrink-0">
+                                <span>Mulai</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Teori -->
+                    <div class="flow-line flex flex-col items-center">
+                        <div class="w-full glass-panel glass-panel-hover rounded-2xl p-5 flex items-center gap-4 group">
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-400 flex items-center justify-center font-extrabold text-lg shrink-0 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                02
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-[11px] font-bold text-amber-400 uppercase tracking-widest">Bagian A: Teori</span>
+                                <h3 class="font-bold text-white group-hover:text-yellow-400 transition-colors text-base">Pelajari 4 Teknik Prompting</h3>
+                                <p class="text-xs text-neutral-400 mt-0.5">Memahami konsep RTCO, Few-Shot, Constraint, dan Format Prompting.</p>
+                            </div>
+                            <button onclick="switchTab('guide')" class="px-3.5 py-2 text-xs bg-white/5 hover:bg-amber-500 hover:text-black text-amber-200 border border-white/10 rounded-xl transition-all font-semibold flex items-center gap-1.5 shrink-0">
+                                <span>Lihat Materi</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Pilih Teknik -->
+                    <div class="flow-line flex flex-col items-center">
+                        <div class="w-full glass-panel glass-panel-hover rounded-2xl p-5 flex items-center gap-4 group">
+                            <div class="w-12 h-12 rounded-xl bg-yellow-500/15 border border-yellow-500/40 text-yellow-400 flex items-center justify-center font-extrabold text-lg shrink-0 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                                03
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-[11px] font-bold text-yellow-400 uppercase tracking-widest">Bagian B: Persiapan</span>
+                                <h3 class="font-bold text-white group-hover:text-yellow-400 transition-colors text-base">Pilih Teknik di Simulator</h3>
+                                <p class="text-xs text-neutral-400 mt-0.5">Memilih salah satu dari 4 teknik untuk dilakukan pengujian prompt.</p>
+                            </div>
+                            <button onclick="switchTab('simulator')" class="px-3.5 py-2 text-xs bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-lg shadow-orange-500/20">
+                                <span>Buka Simulator</span>
+                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Input & Uji -->
+                    <div class="flow-line flex flex-col items-center">
+                        <div class="w-full glass-panel glass-panel-hover rounded-2xl p-5 flex items-center gap-4 group">
+                            <div class="w-12 h-12 rounded-xl bg-orange-600/15 border border-orange-600/40 text-orange-400 flex items-center justify-center font-extrabold text-lg shrink-0 shadow-[0_0_15px_rgba(234,88,12,0.2)]">
+                                04
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-[11px] font-bold text-orange-400 uppercase tracking-widest">Bagian B: Eksekusi</span>
+                                <h3 class="font-bold text-white group-hover:text-yellow-400 transition-colors text-base">Susun Prompt & Uji Respon AI</h3>
+                                <p class="text-xs text-neutral-400 mt-0.5">Tulis instruksi presisi, jalankan simulator, dan amati keluaran AI.</p>
+                            </div>
+                            <button onclick="switchTab('simulator')" class="px-3.5 py-2 text-xs bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-bold rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-lg shadow-orange-500/20">
+                                <span>Uji Sekarang</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 5: Selesai -->
+                    <div class="flow-line-last flex flex-col items-center">
+                        <div class="w-full glass-panel rounded-2xl p-5 flex items-center gap-4 border-yellow-500/50 shadow-[0_0_30px_rgba(250,204,21,0.15)] bg-gradient-to-r from-amber-950/30 to-black/60">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 text-black flex items-center justify-center font-black text-lg shrink-0 shadow-lg shadow-yellow-500/30">
+                                <i data-lucide="check" class="w-6 h-6 stroke-[3]"></i>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-[11px] font-bold text-yellow-400 uppercase tracking-widest">Selesai</span>
+                                <h3 class="font-bold text-white text-base">Unggah Laporan ke Google Classroom</h3>
+                                <p class="text-xs text-neutral-400 mt-0.5">Upload dokumen laporan praktikum yang telah diisi lengkap.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION 2: SIMULATOR ================= -->
+        <section id="sec-simulator" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                
+                <!-- Left Control Panel (Prompt Editor) -->
+                <div class="lg:col-span-6 flex flex-col gap-6">
+                    <div class="glass-panel rounded-3xl p-6 sm:p-7 flex-1 flex flex-col relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-5 pb-4 border-b border-white/10">
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2.5">
+                                <div class="p-2 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30">
+                                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                                </div>
+                                <span>Konfigurasi Prompt</span>
+                            </h2>
+                            <button onclick="loadTemplate()" class="text-xs bg-white/5 hover:bg-orange-500/20 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/30 transition-all duration-300 flex items-center gap-1.5 font-semibold">
+                                <i data-lucide="wand-2" class="w-3.5 h-3.5 text-yellow-400"></i> Gunakan Template
+                            </button>
+                        </div>
+
+                        <!-- Technique Selector -->
+                        <div class="mb-5">
+                            <label class="block text-xs font-bold text-amber-200/70 uppercase tracking-wider mb-2.5">Pilih Teknik Prompting:</label>
+                            <div class="grid grid-cols-2 gap-2.5" id="technique-selector">
+                                <button onclick="setTechnique('rtco')" id="btn-rtco" class="tech-btn p-3.5 rounded-2xl border text-left transition-all duration-300 bg-orange-500/20 border-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                                    <div class="font-extrabold text-sm text-yellow-400">RTCO</div>
+                                    <div class="text-[11px] text-neutral-300 mt-0.5">Role, Task, Context, Output</div>
+                                </button>
+                                <button onclick="setTechnique('fewshot')" id="btn-fewshot" class="tech-btn p-3.5 rounded-2xl border border-white/10 text-left transition-all duration-300 bg-white/5 text-neutral-300 hover:bg-white/10 hover:border-amber-500/30">
+                                    <div class="font-extrabold text-sm text-white">Few-Shot</div>
+                                    <div class="text-[11px] text-neutral-400 mt-0.5">Memberikan Contoh Input-Output</div>
+                                </button>
+                                <button onclick="setTechnique('constraint')" id="btn-constraint" class="tech-btn p-3.5 rounded-2xl border border-white/10 text-left transition-all duration-300 bg-white/5 text-neutral-300 hover:bg-white/10 hover:border-amber-500/30">
+                                    <div class="font-extrabold text-sm text-white">Constraint</div>
+                                    <div class="text-[11px] text-neutral-400 mt-0.5">Pembatasan Kata & Aturan</div>
+                                </button>
+                                <button onclick="setTechnique('format')" id="btn-format" class="tech-btn p-3.5 rounded-2xl border border-white/10 text-left transition-all duration-300 bg-white/5 text-neutral-300 hover:bg-white/10 hover:border-amber-500/30">
+                                    <div class="font-extrabold text-sm text-white">Format</div>
+                                    <div class="text-[11px] text-neutral-400 mt-0.5">Struktur Tabel / Markdown</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Prompt Input Textarea -->
+                        <div class="flex-1 flex flex-col mb-5">
+                            <label for="prompt-input" class="block text-xs font-bold text-amber-200/70 uppercase tracking-wider mb-2.5">Masukkan Prompt Anda:</label>
+                            <textarea id="prompt-input" rows="8" class="w-full flex-1 bg-black/70 border border-white/10 rounded-2xl p-4 text-sm text-neutral-100 font-mono focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-300 resize-none shadow-inner" placeholder="Tuliskan prompt di sini..."></textarea>
+                        </div>
+
+                        <!-- Action Controls -->
+                        <div class="flex items-center gap-3">
+                            <button onclick="runSimulation()" id="btn-run" class="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold py-3.5 px-5 rounded-2xl transition-all duration-300 shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 text-sm">
+                                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                                <span>Simulasikan Prompt</span>
+                            </button>
+                            <button onclick="copyPrompt()" class="glass-button hover:bg-white/10 text-amber-200 p-3.5 rounded-2xl transition-all duration-300 flex items-center justify-center" title="Salin Prompt">
+                                <i data-lucide="copy" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Response Panel (AI Simulation Output) -->
+                <div class="lg:col-span-6 flex flex-col">
+                    <div class="glass-panel rounded-3xl p-6 sm:p-7 flex-1 flex flex-col relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-5 pb-4 border-b border-white/10">
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2.5">
+                                <div class="p-2 rounded-lg bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                                    <i data-lucide="bot" class="w-4 h-4"></i>
+                                </div>
+                                <span>Simulasi Respons AI</span>
+                            </h2>
+                            <span id="status-badge" class="text-xs px-3 py-1 rounded-full bg-white/5 text-amber-200/70 border border-white/10 font-medium">Siap</span>
+                        </div>
+
+                        <!-- Output Box -->
+                        <div id="ai-output" class="flex-1 bg-black/70 border border-white/10 rounded-2xl p-5 overflow-y-auto min-h-[320px] text-sm leading-relaxed text-neutral-200 font-sans shadow-inner">
+                            <div class="h-full flex flex-col items-center justify-center text-neutral-500 py-12">
+                                <i data-lucide="terminal" class="w-12 h-12 mb-3 stroke-1 text-neutral-600"></i>
+                                <p class="text-sm">Klik "Simulasikan Prompt" untuk melihat hasil keluaran AI.</p>
+                            </div>
+                        </div>
+
+                        <!-- Evaluator Box -->
+                        <div class="mt-5 pt-4 border-t border-white/10">
+                            <div class="flex items-center justify-between mb-2.5">
+                                <span class="text-xs font-bold text-amber-200/70 uppercase tracking-wider flex items-center gap-2">
+                                    <i data-lucide="shield-check" class="w-4 h-4 text-orange-400"></i> Evaluator Analisis Prompt Dinamis
+                                </span>
+                            </div>
+                            <div id="evaluation-tags" class="flex flex-wrap gap-2 text-xs">
+                                <span class="px-3 py-1 rounded-xl bg-white/5 text-neutral-400 border border-white/10 text-[11px]">Pilih teknik dan isi prompt untuk menganalisis</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= SECTION 3: GUIDE / MATERI ================= -->
+        <section id="sec-guide" class="hidden space-y-6">
+            <div class="glass-panel rounded-3xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="max-w-3xl mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Panduan & Teori 4 Teknik Prompt Engineering</h2>
+                        <p class="text-neutral-400 mt-1.5 text-sm">Gunakan ringkasan teori ini untuk mengisi Bagian A pada buku catatan praktikum Anda.</p>
+                    </div>
+                    <button onclick="switchTab('simulator')" class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-extrabold rounded-2xl transition-all duration-300 shadow-lg shadow-orange-500/20 flex items-center gap-2 text-xs shrink-0">
+                        <span>Lanjut ke Simulator</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <!-- Card 1: RTCO -->
+                    <div class="glass-panel glass-panel-hover rounded-2xl p-6 flex flex-col justify-between border-orange-500/20">
+                        <div>
+                            <div class="flex items-center gap-3 mb-3.5">
+                                <div class="p-2.5 rounded-xl bg-orange-500/15 text-orange-400 border border-orange-500/30">
+                                    <i data-lucide="user-check" class="w-5 h-5"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-white">1. Teknik RTCO</h3>
+                            </div>
+                            <p class="text-sm text-neutral-300 mb-4 leading-relaxed">Kerangka kerja komprehensif untuk memberikan instruksi spesifik. Dengan membagi prompt menjadi 4 elemen ini, AI dapat memahami secara utuh apa yang Anda inginkan sehingga meminimalisir asumsi yang salah.</p>
+                            <ul class="text-xs text-neutral-300 space-y-2 font-mono mb-5 bg-black/50 p-3.5 rounded-xl border border-white/5">
+                                <li class="flex items-start gap-2"><strong class="text-orange-400 shrink-0">Role (R):</strong> Peran/Keahlian spesifik yang diadopsi AI.</li>
+                                <li class="flex items-start gap-2"><strong class="text-orange-400 shrink-0">Task (T):</strong> Instruksi tugas utama yang jelas & lugas.</li>
+                                <li class="flex items-start gap-2"><strong class="text-orange-400 shrink-0">Context (C):</strong> Latar belakang masalah/target audiens.</li>
+                                <li class="flex items-start gap-2"><strong class="text-orange-400 shrink-0">Output (O):</strong> Bentuk akhir (poin, tabel, paragraf).</li>
+                            </ul>
+                        </div>
+                        <button onclick="setTechnique('rtco'); switchTab('simulator');" class="w-full py-2.5 bg-white/5 hover:bg-orange-500 hover:text-black text-amber-200 rounded-xl text-xs font-bold transition-all border border-white/10">Uji Teknik RTCO &rarr;</button>
+                    </div>
+
+                    <!-- Card 2: Few-Shot -->
+                    <div class="glass-panel glass-panel-hover rounded-2xl p-6 flex flex-col justify-between border-amber-500/20">
+                        <div>
+                            <div class="flex items-center gap-3 mb-3.5">
+                                <div class="p-2.5 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                    <i data-lucide="layers" class="w-5 h-5"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-white">2. Few-Shot Prompting</h3>
+                            </div>
+                            <p class="text-sm text-neutral-300 mb-4 leading-relaxed">Teknik <i>"memandu dengan contoh"</i>. Anda memberikan 2-3 contoh pasangan input-output yang benar terlebih dahulu sebelum memberikan instruksi atau tugas utama.</p>
+                            <div class="text-xs text-amber-200/80 bg-black/50 p-3.5 rounded-xl border border-white/5 font-mono mb-5">
+                                Tujuan: Membantu AI mengenali pola, meniru gaya bahasa, atau melakukan klasifikasi data secara presisi (contoh: Analisis Sentimen) tanpa aturan rumit.
+                            </div>
+                        </div>
+                        <button onclick="setTechnique('fewshot'); switchTab('simulator');" class="w-full py-2.5 bg-white/5 hover:bg-amber-500 hover:text-black text-amber-200 rounded-xl text-xs font-bold transition-all border border-white/10">Uji Teknik Few-Shot &rarr;</button>
+                    </div>
+
+                    <!-- Card 3: Constraint -->
+                    <div class="glass-panel glass-panel-hover rounded-2xl p-6 flex flex-col justify-between border-yellow-500/20">
+                        <div>
+                            <div class="flex items-center gap-3 mb-3.5">
+                                <div class="p-2.5 rounded-xl bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                                    <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-white">3. Constraint (Pembatasan)</h3>
+                            </div>
+                            <p class="text-sm text-neutral-300 mb-4 leading-relaxed">Seni "membatasi" ruang gerak AI agar hasilnya tidak melebar. Anda memberikan aturan tegas mengenai apa yang <b>Boleh</b> dan <b>Tidak Boleh</b> dilakukan oleh AI.</p>
+                            <ul class="text-xs text-neutral-300 space-y-2 font-mono mb-5 bg-black/50 p-3.5 rounded-xl border border-white/5">
+                                <li class="text-yellow-300">• Batasan Jumlah: "Tulis TEPAT 3 kalimat"</li>
+                                <li class="text-yellow-300">• Batasan Gaya: "Gunakan bahasa akademis formal"</li>
+                                <li class="text-yellow-300">• Negative Prompting: "Dilarang memakai kata X"</li>
+                            </ul>
+                        </div>
+                        <button onclick="setTechnique('constraint'); switchTab('simulator');" class="w-full py-2.5 bg-white/5 hover:bg-yellow-400 hover:text-black text-amber-200 rounded-xl text-xs font-bold transition-all border border-white/10">Uji Teknik Constraint &rarr;</button>
+                    </div>
+
+                    <!-- Card 4: Format -->
+                    <div class="glass-panel glass-panel-hover rounded-2xl p-6 flex flex-col justify-between border-orange-500/20">
+                        <div>
+                            <div class="flex items-center gap-3 mb-3.5">
+                                <div class="p-2.5 rounded-xl bg-orange-600/15 text-orange-400 border border-orange-600/30">
+                                    <i data-lucide="table" class="w-5 h-5"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-white">4. Format Prompting</h3>
+                            </div>
+                            <p class="text-sm text-neutral-300 mb-4 leading-relaxed">Mengontrol secara ketat bagaimana AI menstruktur dan menampilkan visualisasi jawabannya agar sesuai dengan kebutuhan pengolahan data Anda.</p>
+                            <div class="text-xs text-orange-200/80 bg-black/50 p-3.5 rounded-xl border border-white/5 font-mono mb-5">
+                                Contoh Format Output: Tabel Markdown, Skrip Kode JSON, Format HTML, Draft Surat Resmi, atau Hierarki Poin.
+                            </div>
+                        </div>
+                        <button onclick="setTechnique('format'); switchTab('simulator');" class="w-full py-2.5 bg-white/5 hover:bg-orange-500 hover:text-black text-amber-200 rounded-xl text-xs font-bold transition-all border border-white/10">Uji Teknik Format &rarr;</button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-extrabold px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none z-50">
+        <i data-lucide="check-circle-2" class="w-5 h-5 stroke-[2.5]"></i>
+        <span id="toast-msg" class="text-sm">Teks berhasil disalin!</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data Templates & Simulator Logic
+        const promptData = {
+            rtco: {
+                prompt: `[Role]: Anda adalah seorang Ahli Pemasaran Digital Senior.\n[Task]: Buatkan strategi kampanye media sosial untuk peluncuran produk baru.\n[Context]: Produknya adalah sepatu lari ramah lingkungan dari sampah plastik daur ulang. Target audiens adalah Gen Z (18-25 tahun) yang peduli lingkungan.\n[Output]: Berikan 3 ide konten utama dalam bentuk poin-poin. Setiap poin maksimal terdiri dari 2 kalimat.`,
+                response: `1. **Tantangan #LariTanpaJejak:** Buat kampanye tantangan lari di mana peserta membagikan rute lari mereka sambil memungut sampah menggunakan hashtag khusus. Pemenang mingguan akan mendapatkan sepasang sepatu lari ramah lingkungan kita.\n\n2. **Video Behind-the-Scenes Daur Ulang:** Unggah video pendek (Reels/TikTok) bergaya dokumenter cepat yang menunjukkan proses transformasi botol plastik menjadi serat kain sepatu. Tunjukkan transparansi produksi untuk membangun kepercayaan audiens Gen Z.\n\n3. **Kolaborasi Influencer Eco-Friendly:** Gandeng mikro-influencer lokal yang fokus pada gaya hidup zero-waste untuk mereview sepatu tersebut saat digunakan berolahraga. Minta mereka menonjolkan kenyamanan sepatu sekaligus dampak positifnya bagi bumi.`,
+                eval: ['Role Terdeteksi', 'Task Terdeteksi', 'Context Terdeteksi', 'Output Structured']
+            },
+            fewshot: {
+                prompt: `Klasifikasikan sentimen dan identifikasi emosi utama dari ulasan pelanggan berikut.\n\n[Contoh 1]\nInput: "Aplikasi ini sering crash saat saya mau bayar. Sangat menyebalkan!"\nOutput: Sentimen: Negatif | Emosi: Frustrasi\n\n[Contoh 2]\nInput: "Fitur baru ini lumayan membantu, walau desainnya masih agak kaku."\nOutput: Sentimen: Netral | Emosi: Biasa saja\n\n[Contoh 3]\nInput: "Wah, pengirimannya super cepat dan kurirnya ramah banget. Bintang 5!"\nOutput: Sentimen: Positif | Emosi: Gembira\n\n[Tugas Anda]\nInput: "Layanan pelanggan tidak membalas pesan saya selama seminggu. Saya butuh refund sekarang!"\nOutput:`,
+                response: `Sentimen: Negatif | Emosi: Marah`,
+                eval: ['Example Shots: 3 Pair', 'Pattern Matching Active', 'Few-Shot Format Valid']
+            },
+            constraint: {
+                prompt: `Tuliskan ringkasan tentang bahaya kecanduan media sosial bagi remaja.\n\n[Batasan yang Wajib Dipatuhi]:\n1. Panjang teks harus TEPAT 3 kalimat (tidak boleh kurang atau lebih).\n2. Dilarang keras menggunakan kata: "handphone", "gadget", atau "internet".\n3. Gunakan gaya bahasa yang serius dan akademis.`,
+                response: `Penggunaan platform jejaring daring secara berlebihan dapat memicu gangguan kecemasan dan menurunkan kualitas tidur pada kelompok usia remaja. Fenomena ini juga sering kali berdampak negatif terhadap kemampuan konsentrasi mereka dalam menyerap materi pendidikan di institusi akademik. Oleh karena itu, intervensi psikologis dini sangat diperlukan untuk mencegah perburukan kesehatan mental generasi muda.`,
+                eval: ['Exact 3 Sentences', 'Negative Constraints Met', 'Academic Tone Active']
+            },
+            format: {
+                prompt: `Ekstrak informasi dari teks berikut dan sajikan dalam format JSON.\n\nTeks: "Pada tanggal 15 Agustus 2024, Budi Santoso membeli 2 buah Laptop Asus ROG seharga Rp25.000.000 per unit dan 1 buah Mouse Logitech seharga Rp500.000 di Toko Elektronik Jaya."\n\nInstruksi Format:\nSajikan HANYA kode JSON yang valid dengan struktur key:\n- nama_pembeli (string)\n- tanggal_pembelian (string, YYYY-MM-DD)\n- total_belanja (integer)\n- daftar_barang (array of objects: nama_barang, jumlah)`,
+                response: `<div class="bg-black/60 p-4 rounded-xl border border-white/10 font-mono text-sm text-yellow-400 overflow-x-auto shadow-inner"><pre><code>{
+  "nama_pembeli": "Budi Santoso",
+  "tanggal_pembelian": "2024-08-15",
+  "total_belanja": 50500000,
+  "daftar_barang": [
+    {
+      "nama_barang": "Laptop Asus ROG",
+      "jumlah": 2
+    },
+    {
+      "nama_barang": "Mouse Logitech",
+      "jumlah": 1
+    }
+  ]
+}</code></pre></div>`,
+                eval: ['JSON Format Specified', 'Structure Enforced', 'Data Extracted']
+            }
+        };
+
+        let activeTechnique = 'rtco';
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Switch Navigation Tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-amber-500', 'text-black', 'font-bold', 'shadow-lg', 'shadow-orange-500/20');
+                btn.classList.add('text-neutral-300');
+            });
+            
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-amber-500', 'text-black', 'font-bold', 'shadow-lg', 'shadow-orange-500/20');
+                activeBtn.classList.remove('text-neutral-300');
+            }
+
+            document.getElementById('sec-flowchart').classList.add('hidden');
+            document.getElementById('sec-simulator').classList.add('hidden');
+            document.getElementById('sec-guide').classList.add('hidden');
+
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Set Active Technique in Simulator
+        function setTechnique(tech) {
+            activeTechnique = tech;
+            document.querySelectorAll('.tech-btn').forEach(btn => {
+                btn.classList.remove('bg-orange-500/20', 'border-orange-500', 'text-white', 'shadow-[0_0_15px_rgba(249,115,22,0.2)]');
+                btn.classList.add('border-white/10', 'bg-white/5', 'text-neutral-300');
+                
+                const title = btn.querySelector('.font-extrabold');
+                if(title) {
+                    title.classList.remove('text-yellow-400');
+                    title.classList.add('text-white');
+                }
+            });
+
+            const activeBtn = document.getElementById(`btn-${tech}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-white/10', 'bg-white/5', 'text-neutral-300');
+                activeBtn.classList.add('bg-orange-500/20', 'border-orange-500', 'text-white', 'shadow-[0_0_15px_rgba(249,115,22,0.2)]');
+                
+                const title = activeBtn.querySelector('.font-extrabold');
+                if(title) {
+                    title.classList.remove('text-white');
+                    title.classList.add('text-yellow-400');
+                }
+            }
+
+            loadTemplate();
+        }
+
+        // Load Prompt Template into Input Box
+        function loadTemplate() {
+            const input = document.getElementById('prompt-input');
+            input.value = promptData[activeTechnique].prompt;
+            analyzePromptDinamis(input.value);
+        }
+
+        // Dynamic Evaluator Logic (Analyzes custom prompts)
+        function analyzePromptDinamis(text) {
+            let tags = [];
+            const lower = text.toLowerCase();
+
+            if (activeTechnique === 'rtco') {
+                if (lower.includes('role') || lower.includes('bertindak') || lower.includes('sebagai')) tags.push('Role Detected');
+                if (lower.includes('task') || lower.includes('tugas') || lower.includes('buat') || lower.includes('jelaskan')) tags.push('Task Detected');
+                if (lower.includes('context') || lower.includes('konteks') || lower.includes('latar belakang')) tags.push('Context Detected');
+                if (lower.includes('output') || lower.includes('hasil') || lower.includes('format')) tags.push('Output Defined');
+            } else if (activeTechnique === 'fewshot') {
+                if (lower.includes('contoh') || lower.includes('example') || lower.includes('input:')) tags.push('Example Shot Pattern');
+                if (lower.includes('sentimen') || lower.includes('klasifikasi')) tags.push('Classification Goal');
+            } else if (activeTechnique === 'constraint') {
+                if (lower.includes('batasan') || lower.includes('maksimal') || lower.includes('jangan') || lower.includes('tanpa')) tags.push('Constraint Rules');
+                if (lower.includes('kata') || lower.includes('paragraf')) tags.push('Length Constraint');
+            } else if (activeTechnique === 'format') {
+                if (lower.includes('tabel') || lower.includes('markdown') || lower.includes('json') || lower.includes('poin')) tags.push('Format Specification');
+            }
+
+            if (tags.length === 0) {
+                tags.push('Custom Input Prompt');
+            }
+            updateEvaluator(tags);
+        }
+
+        // Run AI Simulation
+        function runSimulation() {
+            const promptText = document.getElementById('prompt-input').value.trim();
+            const outputBox = document.getElementById('ai-output');
+            const statusBadge = document.getElementById('status-badge');
+
+            if (!promptText) {
+                showToast('Harap isi prompt terlebih dahulu!');
+                return;
+            }
+
+            statusBadge.innerText = "Memproses...";
+            statusBadge.className = "text-xs px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 animate-pulse font-medium";
+            
+            outputBox.innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-neutral-400 py-12">
+                    <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-3 text-yellow-400"></i>
+                    <p class="text-xs font-mono text-amber-200/80">Generasi keluaran AI sedang berjalan...</p>
+                </div>
+            `;
+            lucide.createIcons();
+
+            setTimeout(() => {
+                statusBadge.innerText = "Selesai";
+                statusBadge.className = "text-xs px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 font-medium";
+                
+                // If template prompt used, show formatted preset response, else simulate dynamic AI answer
+                if (promptText === promptData[activeTechnique].prompt) {
+                    outputBox.innerHTML = promptData[activeTechnique].response;
+                } else {
+                    outputBox.innerHTML = `<div class="p-4 bg-white/5 border border-amber-500/20 rounded-xl text-neutral-200"><p class="font-semibold text-yellow-400 mb-2">Simulasi Respons AI untuk Prompt Kustom Anda:</p><p class="text-xs font-mono text-neutral-300 whitespace-pre-line leading-relaxed">${escapeHtml(promptText)}</p><p class="mt-4 text-xs text-orange-400 font-semibold">✓ Respons diproses sesuai dengan instruksi dan teknik ${activeTechnique.toUpperCase()} yang telah Anda terapkan.</p></div>`;
+                }
+
+                analyzePromptDinamis(promptText);
+
+            }, 650);
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Update Evaluator Tags UI
+        function updateEvaluator(tags) {
+            const container = document.getElementById('evaluation-tags');
+            container.innerHTML = '';
+            tags.forEach(tag => {
+                const badge = document.createElement('span');
+                badge.className = "px-3 py-1 rounded-xl bg-orange-500/10 text-orange-300 border border-orange-500/25 font-mono text-[11px] flex items-center gap-1.5 font-medium";
+                badge.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-yellow-400"></i> ${tag}`;
+                container.appendChild(badge);
+            });
+            lucide.createIcons();
+        }
+
+        // Copy Prompt to Clipboard
+        function copyPrompt() {
+            const promptText = document.getElementById('prompt-input').value;
+            if (!promptText) return;
+
+            const tempInput = document.createElement('textarea');
+            tempInput.value = promptText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast('Prompt berhasil disalin!');
+        }
+
+        // Display Toast Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        // Listen for user typing in Prompt Input
+        document.getElementById('prompt-input').addEventListener('input', function(e) {
+            analyzePromptDinamis(e.target.value);
+        });
+
+        // Initialize Default State
+        window.onload = function() {
+            loadTemplate();
+        };
+    </script>
+</body>
+</html>
